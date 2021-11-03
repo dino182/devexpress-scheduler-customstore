@@ -1,0 +1,44 @@
+﻿@using DevExtreme.AspNet.Data.ResponseModel
+@using DevExtreme.AspNet.Data
+@using DevExpress.Blazor
+
+@implements IAsyncDisposable
+
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
+
+<div>
+    <div @ref="schedulerElement"></div>
+</div>
+
+
+@code {
+    private ElementReference schedulerElement;
+    private IJSObjectReference jsModule;
+    private IJSObjectReference jsScheduler;
+    private DotNetObjectReference<Scheduler> scheduler;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./scheduler.js");
+            scheduler = DotNetObjectReference.Create(this);
+            jsScheduler = await jsModule.InvokeAsync<IJSObjectReference>("create", schedulerElement, scheduler, DateTime.Now, nameof(JsLoadData));
+        }
+    }
+
+    [JSInvokable]
+    public Task<LoadResult> JsLoadData(DataSourceLoadOptionsBase loadOptions)
+    {
+        return HttpClient.GetFromJsonAsync<LoadResult>(loadOptions.ConvertToGetRequestUri("api/schedulerdata"));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await jsModule.InvokeVoidAsync("dispose", jsScheduler);
+        await jsScheduler.DisposeAsync();
+        await jsModule.DisposeAsync();
+        scheduler.Dispose();
+    }
+}
