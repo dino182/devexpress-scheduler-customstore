@@ -1,0 +1,1 @@
+This sample application demonstrates a bug when attempting to use a DevExpress.data.CustomStore datasource with the DevExpress Scheduler control in v21.2.
